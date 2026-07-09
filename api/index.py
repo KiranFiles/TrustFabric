@@ -40,35 +40,171 @@ HIGH_RISK_COUNTRIES = {"NG", "RU", "KP", "IR", "XX"}
 
 
 def _seed_demo_data() -> None:
-    """Seed a handful of alerts/devices so dashboards aren't empty on first load."""
+    """Seed named persona alerts/devices so dashboards aren't empty on first load."""
     now = datetime.utcnow()
-    sample_users = ["USR-10231", "USR-10874", "USR-11002", "USR-11390"]
-    reasons_pool = [
-        "new device",
-        "high transaction amount",
-        "odd hour",
-        "high velocity",
-        "flagged country",
+
+    # ── Named Personas ────────────────────────────────────────────────────────
+    # Priya Nair  – USR-10231 – retail customer, mostly mobile banking
+    # Rahul Mehta – USR-10874 – frequent ATM user, flagged for card skimming
+    # Ananya Sharma – USR-11002 – international traveller, flagged cross-border
+    # Vikram Iyer – USR-11390 – business account, high velocity mobile transfers
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # Enroll known devices for each persona
+    KNOWN_DEVICES["USR-10231"] = {"DEV-9911"}            # Priya's iPhone
+    KNOWN_DEVICES["USR-10874"] = {"DEV-3301", "DEV-3302"} # Rahul's phone + tablet
+    KNOWN_DEVICES["USR-11002"] = {"DEV-5512"}             # Ananya's phone
+    KNOWN_DEVICES["USR-11390"] = {"DEV-7741", "DEV-7742"} # Vikram's phone + laptop
+
+    # Seed persona-specific alerts
+    persona_alerts = [
+        # ── Priya Nair (mostly cleared, one suspicious) ───────────────────────
+        {
+            "id": "ALT-1001",
+            "user_id": "USR-10231",
+            "channel": "mobile_app",
+            "amount": 800.0,
+            "risk_score": 5,
+            "reason": "No anomalies detected against known behavioral profile",
+            "status": "cleared",
+            "timestamp": (now - timedelta(hours=2)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1002",
+            "user_id": "USR-10231",
+            "channel": "mobile_app",
+            "amount": 250000.0,
+            "risk_score": 95,
+            "reason": "high transaction amount",
+            "status": "open",
+            "timestamp": (now - timedelta(minutes=45)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1003",
+            "user_id": "USR-10231",
+            "channel": "web_portal",
+            "amount": 12000.0,
+            "risk_score": 30,
+            "reason": "new device",
+            "status": "reviewing",
+            "timestamp": (now - timedelta(hours=18)).isoformat() + "Z",
+        },
+        # ── Rahul Mehta (ATM card skimming scenario) ──────────────────────────
+        {
+            "id": "ALT-1004",
+            "user_id": "USR-10874",
+            "channel": "atm",
+            "amount": 40000.0,
+            "risk_score": 88,
+            "reason": "new device",
+            "status": "confirmed_fraud",
+            "timestamp": (now - timedelta(hours=6)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1005",
+            "user_id": "USR-10874",
+            "channel": "atm",
+            "amount": 40000.0,
+            "risk_score": 92,
+            "reason": "high velocity",
+            "status": "confirmed_fraud",
+            "timestamp": (now - timedelta(hours=6, minutes=3)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1006",
+            "user_id": "USR-10874",
+            "channel": "mobile_app",
+            "amount": 3500.0,
+            "risk_score": 20,
+            "reason": "No anomalies detected against known behavioral profile",
+            "status": "cleared",
+            "timestamp": (now - timedelta(days=1)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1007",
+            "user_id": "USR-10874",
+            "channel": "atm",
+            "amount": 35000.0,
+            "risk_score": 75,
+            "reason": "odd hour",
+            "status": "reviewing",
+            "timestamp": (now - timedelta(hours=30)).isoformat() + "Z",
+        },
+        # ── Ananya Sharma (cross-border, international travel) ────────────────
+        {
+            "id": "ALT-1008",
+            "user_id": "USR-11002",
+            "channel": "api_partner",
+            "amount": 95000.0,
+            "risk_score": 70,
+            "reason": "flagged country",
+            "status": "reviewing",
+            "timestamp": (now - timedelta(hours=4)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1009",
+            "user_id": "USR-11002",
+            "channel": "web_portal",
+            "amount": 180000.0,
+            "risk_score": 85,
+            "reason": "high transaction amount",
+            "status": "open",
+            "timestamp": (now - timedelta(minutes=90)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1010",
+            "user_id": "USR-11002",
+            "channel": "mobile_app",
+            "amount": 5600.0,
+            "risk_score": 15,
+            "reason": "No anomalies detected against known behavioral profile",
+            "status": "cleared",
+            "timestamp": (now - timedelta(days=2)).isoformat() + "Z",
+        },
+        # ── Vikram Iyer (high-velocity business account fraud) ─────────────────
+        {
+            "id": "ALT-1011",
+            "user_id": "USR-11390",
+            "channel": "mobile_app",
+            "amount": 75000.0,
+            "risk_score": 97,
+            "reason": "high velocity",
+            "status": "open",
+            "timestamp": (now - timedelta(minutes=10)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1012",
+            "user_id": "USR-11390",
+            "channel": "mobile_app",
+            "amount": 68000.0,
+            "risk_score": 97,
+            "reason": "high velocity",
+            "status": "open",
+            "timestamp": (now - timedelta(minutes=8)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1013",
+            "user_id": "USR-11390",
+            "channel": "mobile_app",
+            "amount": 71000.0,
+            "risk_score": 97,
+            "reason": "high velocity",
+            "status": "open",
+            "timestamp": (now - timedelta(minutes=5)).isoformat() + "Z",
+        },
+        {
+            "id": "ALT-1014",
+            "user_id": "USR-11390",
+            "channel": "branch",
+            "amount": 22000.0,
+            "risk_score": 25,
+            "reason": "No anomalies detected against known behavioral profile",
+            "status": "cleared",
+            "timestamp": (now - timedelta(days=3)).isoformat() + "Z",
+        },
     ]
-    for i in range(14):
-        user = random.choice(sample_users)
-        ALERTS.append(
-            {
-                "id": f"ALT-{1000 + i}",
-                "user_id": user,
-                "channel": random.choice(CHANNELS),
-                "amount": round(random.uniform(500, 95000), 2),
-                "risk_score": random.randint(62, 98),
-                "reason": random.choice(reasons_pool),
-                "status": random.choice(["open", "reviewing", "cleared", "confirmed_fraud"]),
-                "timestamp": (now - timedelta(minutes=random.randint(1, 4000))).isoformat() + "Z",
-            }
-        )
-    for u in sample_users:
-        if u == "USR-10231":
-            KNOWN_DEVICES[u] = {"DEV-9911"}
-        else:
-            KNOWN_DEVICES[u] = {f"DEV-{random.randint(1000,9999)}" for _ in range(random.randint(1, 3))}
+
+    ALERTS.extend(persona_alerts)
 
 
 _seed_demo_data()

@@ -3,23 +3,155 @@ import { api, IdentityRecord, RiskResult } from "../lib/api";
 
 const CHANNELS = ["mobile_app", "web_portal", "atm", "branch", "ussd", "api_partner"];
 
+// ── Demo Personas ─────────────────────────────────────────────────────────────
+const PERSONAS = [
+  {
+    name: "Priya Nair",
+    userId: "USR-10231",
+    aadhaar: "4471",
+    tag: "Retail customer · Mobile-first",
+    normal: {
+      label: "Priya – Normal (₹800)",
+      amount: 800,
+      channel: "mobile_app",
+      deviceId: "DEV-9911",
+      hour: 18,
+      velocity: 1,
+      countryCode: "IN",
+    },
+    suspicious: {
+      label: "Priya – Suspicious (₹2,50,000)",
+      amount: 250000,
+      channel: "mobile_app",
+      deviceId: "DEV-UNSEEN",
+      hour: 3,
+      velocity: 6,
+      countryCode: "XX",
+    },
+  },
+  {
+    name: "Rahul Mehta",
+    userId: "USR-10874",
+    aadhaar: "7823",
+    tag: "ATM heavy user · Card skimming risk",
+    normal: {
+      label: "Rahul – Normal ATM (₹3,500)",
+      amount: 3500,
+      channel: "atm",
+      deviceId: "DEV-3301",
+      hour: 12,
+      velocity: 1,
+      countryCode: "IN",
+    },
+    suspicious: {
+      label: "Rahul – Card Skimming (₹40,000 × 6)",
+      amount: 40000,
+      channel: "atm",
+      deviceId: "DEV-STOLEN",
+      hour: 2,
+      velocity: 6,
+      countryCode: "IN",
+    },
+  },
+  {
+    name: "Ananya Sharma",
+    userId: "USR-11002",
+    aadhaar: "3356",
+    tag: "International traveller · Cross-border risk",
+    normal: {
+      label: "Ananya – Normal Transfer (₹5,600)",
+      amount: 5600,
+      channel: "mobile_app",
+      deviceId: "DEV-5512",
+      hour: 10,
+      velocity: 1,
+      countryCode: "IN",
+    },
+    suspicious: {
+      label: "Ananya – Cross-Border (₹1,80,000)",
+      amount: 180000,
+      channel: "web_portal",
+      deviceId: "DEV-5512",
+      hour: 14,
+      velocity: 2,
+      countryCode: "RU",
+    },
+  },
+  {
+    name: "Vikram Iyer",
+    userId: "USR-11390",
+    aadhaar: "9102",
+    tag: "Business account · High-velocity fraud",
+    normal: {
+      label: "Vikram – Normal Branch (₹22,000)",
+      amount: 22000,
+      channel: "branch",
+      deviceId: "DEV-7741",
+      hour: 11,
+      velocity: 1,
+      countryCode: "IN",
+    },
+    suspicious: {
+      label: "Vikram – Burst Transfers (₹75,000 × 7)",
+      amount: 75000,
+      channel: "mobile_app",
+      deviceId: "DEV-HIJACKED",
+      hour: 4,
+      velocity: 7,
+      countryCode: "IN",
+    },
+  },
+];
+
 export default function CustomerDashboard() {
-  const [name, setName] = useState("Priya Nair");
-  const [userId, setUserId] = useState("USR-10231");
-  const [aadhaar, setAadhaar] = useState("4471");
+  const [activePersona, setActivePersona] = useState(0);
+  const persona = PERSONAS[activePersona];
+
+  const [name, setName] = useState(persona.name);
+  const [userId, setUserId] = useState(persona.userId);
+  const [aadhaar, setAadhaar] = useState(persona.aadhaar);
   const [identity, setIdentity] = useState<IdentityRecord | null>(null);
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
   const [issuing, setIssuing] = useState(false);
 
-  const [amount, setAmount] = useState(15000);
-  const [channel, setChannel] = useState(CHANNELS[0]);
-  const [deviceId, setDeviceId] = useState("DEV-9911");
-  const [hour, setHour] = useState(14);
-  const [velocity, setVelocity] = useState(1);
-  const [countryCode, setCountryCode] = useState("IN");
+  const [amount, setAmount] = useState(persona.normal.amount);
+  const [channel, setChannel] = useState(persona.normal.channel);
+  const [deviceId, setDeviceId] = useState(persona.normal.deviceId);
+  const [hour, setHour] = useState(persona.normal.hour);
+  const [velocity, setVelocity] = useState(persona.normal.velocity);
+  const [countryCode, setCountryCode] = useState(persona.normal.countryCode);
   const [risk, setRisk] = useState<RiskResult | null>(null);
   const [scoring, setScoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function switchPersona(idx: number) {
+    const p = PERSONAS[idx];
+    setActivePersona(idx);
+    setName(p.name);
+    setUserId(p.userId);
+    setAadhaar(p.aadhaar);
+    setAmount(p.normal.amount);
+    setChannel(p.normal.channel);
+    setDeviceId(p.normal.deviceId);
+    setHour(p.normal.hour);
+    setVelocity(p.normal.velocity);
+    setCountryCode(p.normal.countryCode);
+    setIdentity(null);
+    setVerifyResult(null);
+    setRisk(null);
+    setError(null);
+  }
+
+  function applyPreset(preset: (typeof persona)["normal"]) {
+    setAmount(preset.amount);
+    setChannel(preset.channel);
+    setDeviceId(preset.deviceId);
+    setHour(preset.hour);
+    setVelocity(preset.velocity);
+    setCountryCode(preset.countryCode);
+    setRisk(null);
+    setError(null);
+  }
 
   async function handleIssue() {
     setIssuing(true);
@@ -62,34 +194,6 @@ export default function CustomerDashboard() {
     }
   }
 
-  const loadNormalPreset = () => {
-    setName("Priya Nair");
-    setUserId("USR-10231");
-    setAadhaar("4471");
-    setAmount(800);
-    setChannel("mobile_app");
-    setDeviceId("DEV-9911"); // Priya's usual phone (enrolled on backend)
-    setHour(18); // 6 PM
-    setVelocity(1);
-    setCountryCode("IN");
-    setRisk(null);
-    setError(null);
-  };
-
-  const loadSuspiciousPreset = () => {
-    setName("Priya Nair");
-    setUserId("USR-10231");
-    setAadhaar("4471");
-    setAmount(250000); // high amount (>₹2,00,000)
-    setChannel("mobile_app");
-    setDeviceId("DEV-UNSEEN"); // unrecognized device
-    setHour(3); // 3 AM
-    setVelocity(6); // 6 transactions
-    setCountryCode("XX"); // Flagged country
-    setRisk(null);
-    setError(null);
-  };
-
   const levelColor: Record<string, string> = {
     low: "text-trust",
     medium: "text-alert",
@@ -106,28 +210,55 @@ export default function CustomerDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-line pb-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-line pb-6">
         <div>
           <h1 className="font-display text-2xl font-bold mb-1 text-white">Interactive Simulator</h1>
           <p className="text-fog text-sm">
             Test the Identity Wallet and Risk Scoring Engine in real time.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 p-1.5 bg-surface2 border border-line rounded-lg self-start md:self-auto">
-          <span className="text-xs text-fog font-medium px-2.5">Demo Presets:</span>
-          <button
-            onClick={loadNormalPreset}
-            className="px-3 py-1.5 rounded bg-surface border border-line text-white hover:border-trust text-xs font-semibold transition"
-          >
-            Priya's Normal Txn (₹800)
-          </button>
-          <button
-            onClick={loadSuspiciousPreset}
-            className="px-3 py-1.5 rounded bg-alert/10 border border-alert/30 text-alert hover:bg-alert hover:text-ink text-xs font-bold transition"
-          >
-            Priya's Suspicious Txn (₹2,50,000)
-          </button>
+      </div>
+
+      {/* ── Persona Selector ─────────────────────────────────────────────── */}
+      <div className="mb-8">
+        <p className="text-xs text-fog font-semibold uppercase tracking-widest mb-3">Select Demo Customer</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {PERSONAS.map((p, idx) => (
+            <button
+              key={p.userId}
+              onClick={() => switchPersona(idx)}
+              className={`text-left p-3 rounded-xl border transition ${
+                activePersona === idx
+                  ? "border-trust bg-trust/10"
+                  : "border-line bg-surface hover:border-trust/40"
+              }`}
+            >
+              <p className={`font-display font-bold text-sm mb-0.5 ${activePersona === idx ? "text-trust" : "text-white"}`}>
+                {p.name}
+              </p>
+              <p className="text-[10px] text-fog leading-tight">{p.tag}</p>
+              <p className="font-mono text-[10px] text-fog/60 mt-1">{p.userId}</p>
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* ── Transaction Presets ──────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2 mb-8 p-2 bg-surface2 border border-line rounded-lg">
+        <span className="text-xs text-fog font-medium px-2">Quick Presets:</span>
+        <button
+          onClick={() => applyPreset(persona.normal)}
+          className="px-3 py-1.5 rounded bg-surface border border-line text-white hover:border-trust text-xs font-semibold transition"
+        >
+          ✅ {persona.normal.label}
+        </button>
+        <button
+          onClick={() => applyPreset(persona.suspicious)}
+          className="px-3 py-1.5 rounded bg-alert/10 border border-alert/30 text-alert hover:bg-alert hover:text-ink text-xs font-bold transition"
+        >
+          🚨 {persona.suspicious.label}
+        </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
